@@ -25,7 +25,7 @@ def main():
     keywords = ["New Business","Business", "startup", "Accounting", "Tech Support","website Development"]
     
     # We'll fetch fewer posts per keyword to stay safe under rate limits
-    limit_per_keyword = 1 
+    limit_per_keyword = 2 
     
     # Maximum number of messages we want to send in this run
     daily_send_limit = 5
@@ -33,7 +33,15 @@ def main():
     # Subject for all messages
     message_subject = "Hi, Saw your post on small business, Do you need any help on your tech side"
 
-    # === 3. Search for authors across multiple keywords ===
+    # === 3. Load authors who have already been messaged (from a file or memory) ===
+    # In this case, we're using a file to store the authors.
+    try:
+        with open("messaged_authors.txt", "r") as f:
+            messaged_authors = set(f.read().splitlines())
+    except FileNotFoundError:
+        messaged_authors = set()
+
+    # === 4. Search for authors across multiple keywords ===
     found_authors = set()
     subreddit = reddit.subreddit(subreddit_name)
 
@@ -42,7 +50,7 @@ def main():
         search_count = 0
 
         for submission in subreddit.search(kw, sort="top", limit=limit_per_keyword):
-            if submission.author:
+            if submission.author and str(submission.author) not in messaged_authors:
                 found_authors.add(str(submission.author))
             search_count += 1
 
@@ -54,12 +62,12 @@ def main():
 
     print(f"\nTotal unique authors found: {len(found_authors_list)}")
 
-    # === 4. Send messages with a limit and random delay ===
+    # === 5. Send messages with a limit and random delay ===
     messages_sent = 0
 
     for author_name in found_authors_list:
         if messages_sent >= daily_send_limit:
-            # We've hit our target of 20–30 (or 30) messages for the day
+            # We've hit our target of 5 messages for the day
             print(f"\nReached daily send limit of {daily_send_limit} messages. Stopping now.")
             break
 
@@ -76,7 +84,7 @@ I am Michael from Hazyaz Technologies. We are great at helping businesses level 
 Website Development: Building awesome websites\n
 SEO: Boosting visibility with SEO\n
 Tech Support: Providing solid tech support\n
-Graphics Designing : Providing montly packages for unlimited graphics work\n
+Graphics Designing : Providing monthly packages for unlimited graphics work\n
 If you need any help with this, feel free to reach out! 🙌\n\n
 
 📱 WhatsApp: +44 7466724320
@@ -93,11 +101,16 @@ Cheers,
             print(f"Sending message #{messages_sent+1} to u/{author_name}...")
             reddit.redditor(author_name).message(subject=message_subject, message=message_body)
             messages_sent += 1
+
+            # Add the author to the messaged list and save it to a file
+            messaged_authors.add(author_name)
+            with open("messaged_authors.txt", "a") as f:
+                f.write(f"{author_name}\n")
         except Exception as e:
             print(f"  -> Failed to send message to {author_name}. Error: {e}")
 
-        # 
-        delay_seconds = random.randint(6000, 18000)
+        # Wait with random delay before sending the next message
+        delay_seconds = random.randint(1800, 7200)
         print(f"  -> Waiting {delay_seconds // 60} minutes before sending the next message...")
         time.sleep(delay_seconds)
 
