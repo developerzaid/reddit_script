@@ -28,7 +28,7 @@ def main():
     limit_per_keyword = 1 
     
     # Maximum number of messages we want to send in this run
-    daily_send_limit = 30
+    daily_send_limit = 5
 
     # Subject for all messages
     message_subject = "Hi, Saw your post on small business, Do you need any help on your tech side"
@@ -96,8 +96,8 @@ Cheers,
         except Exception as e:
             print(f"  -> Failed to send message to {author_name}. Error: {e}")
 
-        # Random delay between 10 to 20 minutes
-        delay_seconds = random.randint(600, 1200)
+        # 
+        delay_seconds = random.randint(6000, 18000)
         print(f"  -> Waiting {delay_seconds // 60} minutes before sending the next message...")
         time.sleep(delay_seconds)
 
