@@ -1,7 +1,6 @@
 import praw
 import time
-
-# Just Extra Commit
+import random
 
 def main():
     # === 1. Replace with your own Reddit API credentials ===
@@ -9,7 +8,6 @@ def main():
     CLIENT_SECRET = "t1N_H6N13hIwAVViVi5n8FcyLaz2Sg"
     USER_AGENT = "script:keyword_message_script:v1.0 (by u/Opening_Step_9260)"
 
-    # If you want to send messages, you need a username and password login:
     REDDIT_USERNAME = "Opening_Step_9260"
     REDDIT_PASSWORD = "Alaska2020$"
 
@@ -23,43 +21,87 @@ def main():
     )
 
     # === 2. Define your search parameters ===
-    subreddit_name = "smallbusiness"        # e.g., "AskReddit", "python", etc.
-    keyword = "keyword_to_search"  # e.g., "Python", "API", etc.
-    limit = 50                     # number of search results to process
+    subreddit_name = "smallbusiness"
+    keywords = ["New Business","Business", "startup", "Accounting", "Tech Support","website Development"]
+    
+    # We'll fetch fewer posts per keyword to stay safe under rate limits
+    limit_per_keyword = 1 
+    
+    # Maximum number of messages we want to send in this run
+    daily_send_limit = 30
 
-    # === 3. Define the content of the message you want to send ===
-    message_subject = "Hello from a script!"
-    message_body = (
-        "Hi there, Can i ask you a question?.\n\n"
+    # Subject for all messages
+    message_subject = "Hi, Saw your post on small business, Do you need any help on your tech side"
 
-    )
-
-    # === 4. Collect authors of top posts matching your keyword ===
-    found_authors = []
+    # === 3. Search for authors across multiple keywords ===
+    found_authors = set()
     subreddit = reddit.subreddit(subreddit_name)
 
-    # Use the subreddit search, sorting by top. 
-    # You can add time_filter="week" or "day" if you want more recent top posts.
-    for submission in subreddit.search(keyword, sort="top", limit=limit):
-        # submission.author may be None if the account is deleted or suspended
-        if submission.author and str(submission.author) not in found_authors:
-            found_authors.append(str(submission.author))
+    for kw in keywords:
+        print(f"\nSearching for keyword: '{kw}' (up to {limit_per_keyword} posts)...")
+        search_count = 0
 
-    print(f"Found {len(found_authors)} unique authors from the top {limit} posts.")
+        for submission in subreddit.search(kw, sort="top", limit=limit_per_keyword):
+            if submission.author:
+                found_authors.add(str(submission.author))
+            search_count += 1
 
-    # === 5. Send messages to each author with a 5-minute delay between messages ===
-    for i, author_name in enumerate(found_authors, start=1):
+        print(f"  -> Collected {search_count} posts for keyword '{kw}'")
+
+    # Convert to a list so we can iterate (or shuffle if desired)
+    found_authors_list = list(found_authors)
+    random.shuffle(found_authors_list)  # Optional: randomize the order
+
+    print(f"\nTotal unique authors found: {len(found_authors_list)}")
+
+    # === 4. Send messages with a limit and random delay ===
+    messages_sent = 0
+
+    for author_name in found_authors_list:
+        if messages_sent >= daily_send_limit:
+            # We've hit our target of 20–30 (or 30) messages for the day
+            print(f"\nReached daily send limit of {daily_send_limit} messages. Stopping now.")
+            break
+
+        # Example: personalizing the message with a random keyword
+        chosen_keyword = random.choice(keywords)
+        message_body = (
+            f"""  
+                Hey! 👋
+
+Hey, I saw your post about {chosen_keyword} and just wanted to say hi! 👋
+
+I am Michael from Hazyaz Technologies. We are great at helping businesses level up their tech game with:
+\n\n
+Website Development: Building awesome websites\n
+SEO: Boosting visibility with SEO\n
+Tech Support: Providing solid tech support\n
+Graphics Designing : Providing montly packages for unlimited graphics work\n
+If you need any help with this, feel free to reach out! 🙌\n\n
+
+📱 WhatsApp: +44 7466724320
+🌐 Website: hazyaztechnologies.com\n\n
+
+No pressure, just here if you need a hand. 😊\n
+
+Cheers,
+
+            """
+        )
+
         try:
-            print(f"Sending message to {author_name} ({i}/{len(found_authors)})...")
+            print(f"Sending message #{messages_sent+1} to u/{author_name}...")
             reddit.redditor(author_name).message(subject=message_subject, message=message_body)
-            print("  -> Message sent. Waiting 5 minutes to send the next one...")
+            messages_sent += 1
         except Exception as e:
             print(f"  -> Failed to send message to {author_name}. Error: {e}")
 
-        # Wait 5 minutes (300 seconds) before sending the next message
-        time.sleep(300)  
+        # Random delay between 10 to 20 minutes
+        delay_seconds = random.randint(600, 1200)
+        print(f"  -> Waiting {delay_seconds // 60} minutes before sending the next message...")
+        time.sleep(delay_seconds)
 
-    print("\nAll done!")
+    print(f"\nAll done! Sent {messages_sent} messages in total.")
 
 if __name__ == "__main__":
     main()
