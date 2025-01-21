@@ -1,120 +1,93 @@
-import praw
-import time
+from helpers import *;
+from configurations import *;
+from creds import *;
+from sender import *;
+import praw;
+import time;
 import random
 
+
 def main():
-    # === 1. Replace with your own Reddit API credentials ===
-    CLIENT_ID = "iO2U-ts6W1Ar23IJj_oYbA"
-    CLIENT_SECRET = "t1N_H6N13hIwAVViVi5n8FcyLaz2Sg"
-    USER_AGENT = "script:keyword_message_script:v1.0 (by u/Opening_Step_9260)"
+    already_messaged = load_messaged_authors()
 
-    REDDIT_USERNAME = "Opening_Step_9260"
-    REDDIT_PASSWORD = "Alaska2020$"
+    while True:
+        # For each day/cycle: gather potential authors *once*, then distribute them among accounts
+        # to minimize repeated searching.
 
-    # Create a Reddit instance with username/password for messaging
-    reddit = praw.Reddit(
-        client_id=CLIENT_ID,
-        client_secret=CLIENT_SECRET,
-        user_agent=USER_AGENT,
-        username=REDDIT_USERNAME,
-        password=REDDIT_PASSWORD
-    )
-
-    # === 2. Define your search parameters ===
-    subreddit_name = "smallbusiness"
-    keywords = ["New Business","Business", "startup", "Accounting", "Tech Support","website Development"]
-    
-    # We'll fetch fewer posts per keyword to stay safe under rate limits
-    limit_per_keyword = 2 
-    
-    # Maximum number of messages we want to send in this run
-    daily_send_limit = 5
-
-    # Subject for all messages
-    message_subject = "Hi, Saw your post on small business, Do you need any help on your tech side"
-
-    # === 3. Load authors who have already been messaged (from a file or memory) ===
-    # In this case, we're using a file to store the authors.
-    try:
-        with open("messaged_authors.txt", "r") as f:
-            messaged_authors = set(f.read().splitlines())
-    except FileNotFoundError:
-        messaged_authors = set()
-
-    # === 4. Search for authors across multiple keywords ===
-    found_authors = set()
-    subreddit = reddit.subreddit(subreddit_name)
-
-    for kw in keywords:
-        print(f"\nSearching for keyword: '{kw}' (up to {limit_per_keyword} posts)...")
-        search_count = 0
-
-        for submission in subreddit.search(kw, sort="top", limit=limit_per_keyword):
-            if submission.author and str(submission.author) not in messaged_authors:
-                found_authors.add(str(submission.author))
-            search_count += 1
-
-        print(f"  -> Collected {search_count} posts for keyword '{kw}'")
-
-    # Convert to a list so we can iterate (or shuffle if desired)
-    found_authors_list = list(found_authors)
-    random.shuffle(found_authors_list)  # Optional: randomize the order
-
-    print(f"\nTotal unique authors found: {len(found_authors_list)}")
-
-    # === 5. Send messages with a limit and random delay ===
-    messages_sent = 0
-
-    for author_name in found_authors_list:
-        if messages_sent >= daily_send_limit:
-            # We've hit our target of 5 messages for the day
-            print(f"\nReached daily send limit of {daily_send_limit} messages. Stopping now.")
-            break
-
-        # Example: personalizing the message with a random keyword
-        chosen_keyword = random.choice(keywords)
-        message_body = (
-            f"""  
-                Hey! 👋
-
-Hey, I saw your post about {chosen_keyword} and just wanted to say hi! 👋
-
-I am Michael from Hazyaz Technologies. We are great at helping businesses level up their tech game with:
-\n\n
-Website Development: Building awesome websites\n
-SEO: Boosting visibility with SEO\n
-Tech Support: Providing solid tech support\n
-Graphics Designing : Providing monthly packages for unlimited graphics work\n
-If you need any help with this, feel free to reach out! 🙌\n\n
-
-📱 WhatsApp: +44 7466724320
-🌐 Website: hazyaztechnologies.com\n\n
-
-No pressure, just here if you need a hand. 😊\n
-
-Cheers,
-
-            """
+        # You can just gather a large pool once per day using the *first* account's credentials
+        # (any account credentials will do for searching).
+        # Or you can pick one arbitrarily. We'll pick the first:
+        search_reddit = praw.Reddit(
+            client_id=ACCOUNTS[0]["client_id"],
+            client_secret=ACCOUNTS[0]["client_secret"],
+            user_agent=ACCOUNTS[0]["user_agent"],
+            username=ACCOUNTS[0]["username"],
+            password=ACCOUNTS[0]["password"]
         )
 
-        try:
-            print(f"Sending message #{messages_sent+1} to u/{author_name}...")
-            reddit.redditor(author_name).message(subject=message_subject, message=message_body)
-            messages_sent += 1
+        print("\n[INFO] Gathering new authors for the day...")
+        daily_authors_pool = gather_potential_authors(
+            reddit=search_reddit,
+            subreddits=SUBREDDITS,
+            keywords=KEYWORDS,
+            limit_per_keyword=LIMIT_PER_KEYWORD,
+            already_messaged=already_messaged
+        )
 
-            # Add the author to the messaged list and save it to a file
-            messaged_authors.add(author_name)
-            with open("messaged_authors.txt", "a") as f:
-                f.write(f"{author_name}\n")
-        except Exception as e:
-            print(f"  -> Failed to send message to {author_name}. Error: {e}")
+        print(f"[INFO] Found {len(daily_authors_pool)} potential authors (not yet messaged).")
 
-        # Wait with random delay before sending the next message
-        delay_seconds = random.randint(1800, 7200)
-        print(f"  -> Waiting {delay_seconds // 60} minutes before sending the next message...")
-        time.sleep(delay_seconds)
+        # If the pool is empty, just wait 24 hours and try again tomorrow
+        if not daily_authors_pool:
+            print("[INFO] No new authors found. Sleeping 24 hours...")
+            time.sleep(24 * 3600)
+            continue
 
-    print(f"\nAll done! Sent {messages_sent} messages in total.")
+        # We will *split* the daily_authors_pool among the 5 accounts, so each can get up to
+        # some portion of the pool (it doesn't have to be even). 
+        # We just chunk or slice up daily_authors_pool.  
+        # If each account only needs 5 messages, each account only needs ~5 (or more) from that pool.
+
+        # Let's gather at most 5*N accounts. We'll just shuffle the entire pool, then chunk it.
+
+        random.shuffle(daily_authors_pool)
+        
+        # Each account can get as many authors as it needs. We'll do a simple slice.
+        # Alternatively, you could just pass the entire pool to each account; it will only
+        # send 5 messages anyway. But let's slice to reduce overhead.
+        # (If daily_authors_pool is smaller than needed, accounts won't all get 5.)
+        
+        chunked_authors = []
+        start_index = 0
+        for _ in ACCOUNTS:
+            end_index = start_index + DAILY_SEND_LIMIT
+            chunk = daily_authors_pool[start_index:end_index]
+            chunked_authors.append(chunk)
+            start_index = end_index
+
+        # Now send messages for each account sequentially
+        for i, account in enumerate(ACCOUNTS):
+            account_authors = chunked_authors[i]
+
+            if not account_authors:
+                print(f"[{account['username']}] No authors available to message.")
+                continue
+
+            print(f"\n[INFO] Logging in and sending messages for {account['username']}...")
+            send_daily_messages_for_account(
+                account=account,
+                daily_authors=account_authors,
+                already_messaged=already_messaged
+            )
+
+        # Once all accounts have sent their daily limit, we sleep until the next cycle.
+        # This is a simple approach: we just do it once a day. 
+        # Because sequentially sending 25 messages (5 per account) each separated by 1 hour 
+        # may actually take ~25 hours total, you might "drift" a bit. 
+        # You can refine the timing logic if desired.
+
+        print("[INFO] Daily messaging cycle completed. Sleeping 24 hours until next day...")
+        time.sleep(24 * 3600)  # Sleep 24 hours, then repeat
+
 
 if __name__ == "__main__":
     main()
