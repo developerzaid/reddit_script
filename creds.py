@@ -23,11 +23,11 @@ ACCOUNTS = [
         "password": "Alaska_09"
     },
     {  # All Correct Information
-        "client_id": "oVS8_K4rdA2gy-G1V9W5DQ",
-        "client_secret": "zNgp5wmnrL4-ETQ9HE8E0Vu54bBJsA",
-        "user_agent": "script:hayyya:v1.0 (by u/Ok-Fill-4294)",
-        "username": "Ok-Fill-4294",
-        "password": "Alaska_09"
+        "client_id": "g2Iaa61KS1MGQo18rYzkmg",
+        "client_secret": "AbeXEcIBybDTJuk9jTZTOldanqbxDw",
+        "user_agent": "script:hazyure:v1.0 (by u/sazia24)",
+        "username": "sazia24",
+        "password": "technology24"
     },
     {
         "client_id": "VGi8Tbn5rcQuTeaKHJDFmw",
