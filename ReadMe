@@ -1,0 +1,11 @@
+D:\Software Development\Reddit OutReach>git remote -v
+origin-z        https://github.com/developerzaid/reddit_script.git (fetch)
+origin-z        https://github.com/developerzaid/reddit_script.git (push)
+
+D:\Software Development\Reddit OutReach>git push origin-z zaidlocal
+
+origin-z is the remote server
+
+
+zaidlocal is local
+

@@ -1,22 +1,49 @@
-from helpers import *;
-from configurations import *;
-from creds import *;
-from sender import *;
-import praw;
-import time;
+# main.py
+
+import praw
+import time
 import random
+
+from creds import ACCOUNTS
+from configurations import (
+    SUBREDDITS,
+    KEYWORDS,
+    LIMIT_PER_KEYWORD,
+    DAILY_SEND_LIMIT
+)
+from helpers import load_messaged_authors
+from sender import send_daily_messages_for_account
+
+
+def gather_potential_authors(reddit, subreddits, keywords, limit_per_keyword, already_messaged):
+    """
+    Perform searches on the specified subreddits, using the given keywords.
+    Returns a list of authors (usernames as strings) who have NOT been messaged yet.
+    """
+    found_authors = set()
+
+    for subreddit_name in subreddits:
+        subreddit = reddit.subreddit(subreddit_name)
+        for kw in keywords:
+            # Search with a small limit to avoid heavy API usage
+            for submission in subreddit.search(kw, sort="new", limit=limit_per_keyword):
+                if submission.author is None:
+                    continue
+
+                author_str = str(submission.author).lower()
+                # Only add if not already messaged
+                if author_str not in already_messaged:
+                    found_authors.add(author_str)
+
+    return list(found_authors)
 
 
 def main():
+    # Load authors we've already messaged
     already_messaged = load_messaged_authors()
 
     while True:
-        # For each day/cycle: gather potential authors *once*, then distribute them among accounts
-        # to minimize repeated searching.
-
-        # You can just gather a large pool once per day using the *first* account's credentials
-        # (any account credentials will do for searching).
-        # Or you can pick one arbitrarily. We'll pick the first:
+        # Use the first account's credentials to do the searching
         search_reddit = praw.Reddit(
             client_id=ACCOUNTS[0]["client_id"],
             client_secret=ACCOUNTS[0]["client_secret"],
@@ -36,26 +63,15 @@ def main():
 
         print(f"[INFO] Found {len(daily_authors_pool)} potential authors (not yet messaged).")
 
-        # If the pool is empty, just wait 24 hours and try again tomorrow
         if not daily_authors_pool:
             print("[INFO] No new authors found. Sleeping 24 hours...")
             time.sleep(24 * 3600)
             continue
 
-        # We will *split* the daily_authors_pool among the 5 accounts, so each can get up to
-        # some portion of the pool (it doesn't have to be even). 
-        # We just chunk or slice up daily_authors_pool.  
-        # If each account only needs 5 messages, each account only needs ~5 (or more) from that pool.
-
-        # Let's gather at most 5*N accounts. We'll just shuffle the entire pool, then chunk it.
-
+        # Shuffle so we don't message them in the same order all the time
         random.shuffle(daily_authors_pool)
-        
-        # Each account can get as many authors as it needs. We'll do a simple slice.
-        # Alternatively, you could just pass the entire pool to each account; it will only
-        # send 5 messages anyway. But let's slice to reduce overhead.
-        # (If daily_authors_pool is smaller than needed, accounts won't all get 5.)
-        
+
+        # Split the authors among all accounts
         chunked_authors = []
         start_index = 0
         for _ in ACCOUNTS:
@@ -64,10 +80,9 @@ def main():
             chunked_authors.append(chunk)
             start_index = end_index
 
-        # Now send messages for each account sequentially
+        # Each account sends messages to its chunk
         for i, account in enumerate(ACCOUNTS):
             account_authors = chunked_authors[i]
-
             if not account_authors:
                 print(f"[{account['username']}] No authors available to message.")
                 continue
@@ -79,14 +94,8 @@ def main():
                 already_messaged=already_messaged
             )
 
-        # Once all accounts have sent their daily limit, we sleep until the next cycle.
-        # This is a simple approach: we just do it once a day. 
-        # Because sequentially sending 25 messages (5 per account) each separated by 1 hour 
-        # may actually take ~25 hours total, you might "drift" a bit. 
-        # You can refine the timing logic if desired.
-
         print("[INFO] Daily messaging cycle completed. Sleeping 24 hours until next day...")
-        time.sleep(24 * 3600)  # Sleep 24 hours, then repeat
+        time.sleep(24 * 3600)
 
 
 if __name__ == "__main__":

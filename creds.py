@@ -1,7 +1,7 @@
 ACCOUNTS = [
     {
         "client_id": "iO2U-ts6W1Ar23IJj_oYbA",
-        "client_secret": "	t1N_H6N13hIwAVViVi5n8FcyLaz2Sg",
+        "client_secret": "t1N_H6N13hIwAVViVi5n8FcyLaz2Sg",
         "user_agent": "script:heHaz:v1.0 (by u/Opening_Step_9260)",
         "username": "Opening_Step_9260",
         "password": "Alaska_09"
@@ -23,11 +23,11 @@ ACCOUNTS = [
         "password": "Alaska_09"
     },
     {  # All Correct Information
-        "client_id": "8NG3HvACcsLt-gh5e5j53g",
-        "client_secret": "CbOWYUNcN5L2gtEj0ptvbWWS0F7WnA",
-        "user_agent": "script:hay:v1.0 (by u/Ok-Fill-4294)",
-        "username": "Ok-Fill-4294",
-        "password": "Alaska_09"
+        "client_id": "g2Iaa61KS1MGQo18rYzkmg",
+        "client_secret": "AbeXEcIBybDTJuk9jTZTOldanqbxDw",
+        "user_agent": "script:hazyure:v1.0 (by u/sazia24)",
+        "username": "sazia24",
+        "password": "technology24"
     },
     {
         "client_id": "VGi8Tbn5rcQuTeaKHJDFmw",
