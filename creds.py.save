@@ -25,8 +25,8 @@ ACCOUNTS = [
     {  # All Correct Information
         "client_id": "oVS8_K4rdA2gy-G1V9W5DQ",
         "client_secret": "zNgp5wmnrL4-ETQ9HE8E0Vu54bBJsA",
-        "user_agent": "script:hayyya:v1.0 (by u/Ok-Fill-4294)",
-        "username": "Ok-Fill-4294",
+        "user_agent": "script::v1.0 (by u/Ok-Fill-4294)",
+        "username": "sazia24",
         "password": "Alaska_09"
     },
     {

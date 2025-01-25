@@ -29,7 +29,8 @@ and phone no (+447466724320)
 
 # Delay between *any* two messages to avoid spamming (in seconds)
 # 1 hour = 3600 seconds
-DELAY_BETWEEN_MESSAGES = 60  
+DELAY_BETWEEN_MESSAGES = 3600  
 
 # File to store the global ledger of authors already messaged
 LEDGER_FILE = "messaged_authors.txt"
+
