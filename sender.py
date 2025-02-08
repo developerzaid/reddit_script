@@ -4,7 +4,8 @@ from configurations import *;
 from creds import *;
 from helpers import *;
 from helpers import save_messaged_authors
-from configurations import MESSAGE_SUBJECT, MESSAGE_TEMPLATE, DELAY_BETWEEN_MESSAGES
+import random
+from configurations import MESSAGE_SUBJECT, MESSAGE_TEMPLATES, DELAY_BETWEEN_MESSAGES
 
 
 def send_message(reddit, recipient):
