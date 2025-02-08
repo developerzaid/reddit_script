@@ -9,3 +9,8 @@ origin-z is the remote server
 
 zaidlocal is local
 
+git remote set-url origin https://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@github.com/developerzaid/reddit_script.git
+
+
+git pull origin zaidlocal --strategy=recursive --strategy-option=theirs
+
