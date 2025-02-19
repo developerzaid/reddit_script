@@ -50,7 +50,7 @@ MESSAGE_TEMPLATES = [
 
     You can email me at michael@hazyaztechnologies.com or just reply""",
 
-    """Hey..! Wassup? Sorry to drop you a cold message but I saw your post on the 
+    """Hey..! Wassup? I saw your post on the 
     subreddit and was wondering if you need any help with website or SEO?
 
     Im a freelancer based in UK with 6+ years of experience in website development
