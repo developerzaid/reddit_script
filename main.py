@@ -20,8 +20,9 @@ def main():
         )
 
         # Select 10 random subreddits & 5 random keywords daily
-        daily_subreddits = random.sample(SUBREDDITS, min(3, len(SUBREDDITS)))
-        daily_keywords = random.sample(KEYWORDS, min(8, len(KEYWORDS)))
+
+        daily_subreddits = random.sample(SUBREDDITS, min(10, len(SUBREDDITS)))
+        daily_keywords = random.sample(KEYWORDS, min(15, len(KEYWORDS)))
 
         print(f"\n[INFO] Searching in subreddits: {daily_subreddits}")
         print(f"[INFO] Using keywords: {daily_keywords}")

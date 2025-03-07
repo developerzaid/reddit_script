@@ -42,20 +42,20 @@ MESSAGE_TEMPLATES = [
     If there's something we can work on, would love to get
     in touch with you. here's my email(michael@hazyaztechnologies.com)""",
 
-    """Hey! I saw your post on a subreddit and just wanted to check in,
-    if you are looking for any help with website, SEO, or graphics design?
+    """Hey! I saw your post and just wanted to check in,
+    Are you currently looking for help with your website, SEO, or graphics design?
 
-    I run a small agency here in the UK, and we have been helping people with this for over 6 years. 
+    I run a small agency here in the UK, and we have been helping businesses with this for over 6 years. 
     If you ever want to chat or need some support, feel free to reach out! 
-       
+
     You can email me at michael@hazyaztechnologies.com or just reply""",
 
-    """Hey..! Wassup? Sorry to drop you a cold message but I saw your post on the 
+    """Hey..! Wassup? I saw your post on the 
     subreddit and was wondering if you need any help with website or SEO?
-       
+
     Im a freelancer based in UK with 6+ years of experience in website development
     and if you need any help with it i would love to get in touch with you.
-       
+
     You can email me(Michael@hazyaztechnologies.com) or just reply on this."""
 ]
 # Delay between *any* two messages to avoid spamming (in seconds)
