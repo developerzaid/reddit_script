@@ -1,54 +1,42 @@
 import praw
 import time
 import random
-from configurations import *;
-from creds import *;
-from helpers import *;
-from helpers import save_messaged_authors
-from configurations import MESSAGE_SUBJECT, MESSAGE_TEMPLATES, DELAY_BETWEEN_MESSAGES
+from configurations import *
+from helpers import *
 
-
-def send_message(reddit, recipient):
-    """ Send a direct message to a Reddit user with a random template. """
+def send_message(reddit, recipient, subreddit, keyword, is_followup=False):
+    """Send a personalized message based on subreddit or keyword."""
     try:
-        # Randomly select a message template
-        message_template = random.choice(MESSAGE_TEMPLATES)
-        reddit.redditor(recipient).message(MESSAGE_SUBJECT, message_template)
-        print(f"✅ Message sent to u/{recipient}")
+        selected_message = None
+        for industry, subs in INDUSTRY_SUBREDDITS.items():
+            if subreddit in subs:
+                selected_message = INDUSTRY_MESSAGES[industry].format(username=recipient, subreddit=subreddit, keyword=keyword)
+                break
+
+        if not selected_message:
+            selected_message = (random.choice(FOLLOWUP_MESSAGES) if is_followup else random.choice(MESSAGE_TEMPLATES)).format(username=recipient, subreddit=subreddit, keyword=keyword)
+
+        reddit.redditor(recipient).message(MESSAGE_SUBJECT, selected_message)
+        print(f"✅ {'Follow-up' if is_followup else 'Initial'} message sent to u/{recipient} (r/{subreddit}, keyword: {keyword})")
         return True
+
     except Exception as e:
         print(f"⚠️ Failed to send message to u/{recipient}: {e}")
         return False
 
 
-def send_daily_messages_for_account(account, daily_authors, already_messaged):
-    """ Send messages using the given Reddit account. """
-    reddit = praw.Reddit(
-        client_id=account["client_id"],
-        client_secret=account["client_secret"],
-        user_agent=account["user_agent"],
-        username=account["username"],
-        password=account["password"]
-    )
+def send_followups(account, already_messaged):
+    """Send follow-up messages after the delay."""
+    reddit = praw.Reddit(**account)
 
-    sent_count = 0
+    to_remove = []  # ✅ Store users to remove to avoid modifying dict while iterating
 
-    for author in daily_authors:
-        if author in already_messaged:
-            print(f"⏩ Skipping u/{author} (Already messaged)")
-            continue
+    for author, data in already_messaged.items():
+        if time.time() >= data.get("followup_scheduled", float('inf')):
+            if send_message(reddit, author, data["subreddit"], data["keyword"], is_followup=True):
+                to_remove.append(author)
 
-        success = send_message(reddit, author)
-
-        if success:
-            already_messaged.add(author)
-            sent_count += 1
-
-        if sent_count >= 5:  # Limit per account per day
-            print(f"🚀 {account['username']} reached the daily limit.")
-            break
-
-        print(f"⏳ Waiting {DELAY_BETWEEN_MESSAGES / 60} min before next message...")
-        time.sleep(DELAY_BETWEEN_MESSAGES)
+    for author in to_remove:
+        del already_messaged[author]  # ✅ Safely remove users
 
     save_messaged_authors(already_messaged)
