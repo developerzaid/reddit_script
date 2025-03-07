@@ -1,42 +1,38 @@
 import praw
-import time
 import random
-from configurations import *
-from helpers import *
+import time
+from configurations import INDUSTRY_SUBREDDITS, INDUSTRY_MESSAGES, MESSAGE_TEMPLATES, MESSAGE_SUBJECT, FOLLOWUP_MESSAGES
+from helpers import save_messaged_authors
 
 def send_message(reddit, recipient, subreddit, keyword, is_followup=False):
-    """Send a personalized message based on subreddit or keyword."""
     try:
-        selected_message = None
+        message = None
         for industry, subs in INDUSTRY_SUBREDDITS.items():
             if subreddit in subs:
-                selected_message = INDUSTRY_MESSAGES[industry].format(username=recipient, subreddit=subreddit, keyword=keyword)
+                message = INDUSTRY_MESSAGES[industry].format(username=recipient, subreddit=subreddit, keyword=keyword)
                 break
 
-        if not selected_message:
-            selected_message = (random.choice(FOLLOWUP_MESSAGES) if is_followup else random.choice(MESSAGE_TEMPLATES)).format(username=recipient, subreddit=subreddit, keyword=keyword)
+        if not message:
+            message = random.choice(FOLLOWUP_MESSAGES if is_followup else MESSAGE_TEMPLATES).format(username=recipient, subreddit=subreddit, keyword=keyword)
 
-        reddit.redditor(recipient).message(MESSAGE_SUBJECT, selected_message)
-        print(f"✅ {'Follow-up' if is_followup else 'Initial'} message sent to u/{recipient} (r/{subreddit}, keyword: {keyword})")
+        reddit.redditor(recipient).message(MESSAGE_SUBJECT.format(subreddit=subreddit), message)
+        print(f"✅ {'Follow-up' if is_followup else 'Initial'} message sent to {recipient}")
         return True
-
     except Exception as e:
-        print(f"⚠️ Failed to send message to u/{recipient}: {e}")
+        print(f"⚠️ Failed to message {recipient}: {e}")
         return False
 
 
 def send_followups(account, already_messaged):
-    """Send follow-up messages after the delay."""
     reddit = praw.Reddit(**account)
-
-    to_remove = []  # ✅ Store users to remove to avoid modifying dict while iterating
+    to_remove = []
 
     for author, data in already_messaged.items():
-        if time.time() >= data.get("followup_scheduled", float('inf')):
+        if time.time() >= data["followup_scheduled"]:
             if send_message(reddit, author, data["subreddit"], data["keyword"], is_followup=True):
                 to_remove.append(author)
 
     for author in to_remove:
-        del already_messaged[author]  # ✅ Safely remove users
+        del already_messaged[author]
 
     save_messaged_authors(already_messaged)

@@ -1,25 +1,30 @@
 import json
-import time
+import os
 from configurations import LEDGER_FILE
 
-def gather_potential_authors(reddit, subreddits, keywords, limit_per_keyword, already_messaged):
-    """Search for potential authors based on random subreddits & keywords."""
-    authors = set()
+def load_messaged_authors():
+    if not os.path.exists(LEDGER_FILE):
+        return {}
 
+    with open(LEDGER_FILE, "r") as file:
+        return json.load(file)
+
+
+def save_messaged_authors(authors):
+    with open(LEDGER_FILE, "w") as file:
+        json.dump(authors, file)
+
+
+def gather_potential_authors(reddit, subreddits, keywords, limit_per_keyword, already_messaged):
+    authors = set()
     for subreddit in subreddits:
         for keyword in keywords:
-            print(f"🔍 Searching '{keyword}' in r/{subreddit}...")
-
             try:
                 search_results = reddit.subreddit(subreddit).search(keyword, limit=limit_per_keyword)
-
                 for post in search_results:
-                    author = post.author.name if post.author else None
-                    if author and author not in already_messaged:
-                        authors.add((author, subreddit, keyword))
-
+                    if post.author and post.author.name not in already_messaged:
+                        authors.add((post.author.name, subreddit, keyword))
             except Exception as e:
-                print(f"⚠️ Error searching in r/{subreddit}: {e}")
+                print(f"⚠️ Error in r/{subreddit} - {e}")
 
-    return list(authors)  # ✅ Convert to list before returning (avoids duplicates)
-
+    return list(authors)
